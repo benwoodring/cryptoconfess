@@ -1,4 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+
+
+const StyledSelect = styled.select`
+  width: 100%; // Adjust this as needed
+  padding: 8px; // Provide padding to make the dropdown more accessible
+  border: none;
+  border-bottom: 2px solid #2980b9;
+  background-color: transparent;
+  color: #ecf0f1;
+  font-size: 16px;
+  text-align: center;
+
+  &:focus {
+    outline: none;
+    border-bottom-color: #f39c12;
+  }
+
+  // Style for the dropdown options
+  option {
+    background-color: #2c3e50; // Match the background of the dropdown with the overall theme
+    color: #ecf0f1;
+  }
+`;
 
 function ColDropdown({onColChange, selectedCol}) {
     const [collections, setCollections] = useState([]);
@@ -32,13 +56,14 @@ function ColDropdown({onColChange, selectedCol}) {
     }
 
     return (
-        <select>
+        <StyledSelect onChange={onColChange} value={selectedCol}>
+            <option value="">Select a Collection</option>
             {collections.map((collection, index) => (
                 <option key={index} value={collection.name}>
                     {collection.prettyname}
                 </option>
             ))}
-        </select>
+        </StyledSelect>
     );
 }
 

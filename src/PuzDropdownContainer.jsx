@@ -2,18 +2,21 @@ import styled from 'styled-components';
 import React, { useState, useEffect } from 'react';
 import ColDropdown from './ColDropdown';
 import PuzDropdown from './PuzDropdown';
+import DisplayPuzzle from './DisplayPuzzle';
 
 
-function puzDropdownContainer() {
+
+function PuzDropdownContainer() {
     const [selectedCol, setSelectedCol] = useState('');
-    const [puzs, setPuzs] = useState('');
+    const [puzs, setPuzs] = useState([]);
+    const [selectedPuz, setSelectedPuz] = useState(null);
 
     useEffect(() => {
         if (selectedCol) {
             fetch(`http://benjaminjwoodring.com:1611/cccapi?doc=${encodeURIComponent(selectedCol)}`)
                 .then(response => response.json())
                 .then(data => {
-                    setPuzs(data.map(item => item.name));
+                    setPuzs(data.map(item => item));
                 })
                 .catch(error => console.error('Error fetching puzzles:', error));
         } else {
@@ -25,22 +28,38 @@ function puzDropdownContainer() {
         setSelectedCol(event.target.value);
     };
 
+    const handlePuzChange = (event) => {
+      const puzId = event.target.value;
+      console.log(puzId);
+      const foundPuz = puzs.find(puz => puz.reference.toString() === puzId);
+      setSelectedPuz(foundPuz);
+  };
+
     return (
-        <div>
+        <PuzContainer>
           <ColDropdown
             onColChange={handleColChange}
             selectedCol={selectedCol}
           />
-          <PuzDropdown puzs={puzs} />
-        </div>
+          <PuzDropdown 
+            puzs={puzs}
+            onPuzChange={handlePuzChange}
+            selectedPuz={selectedPuz}
+          />
+          <DisplayPuzzle 
+            puz={selectedPuz}
+          />
+        </PuzContainer>
+
+      
       );
 }
 
-export default puzDropdownContainer;
+export default PuzDropdownContainer;
     
 
 
-const EncryptorContainer = styled.div`
+const PuzContainer = styled.div`
   flex-grow: 1;
   display: flex;
   flex-direction: column;

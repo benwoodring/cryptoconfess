@@ -1,15 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
-import Header from './Header';
-import Encryptor from './Encryptor';
-import Footer from './Footer';
+import PuzDropdownContainer from './PuzDropdownContainer';
 
 function App() {
   return (
     <AppContainer>
-      <Header />
-      <Encryptor />
-      <Footer />
+      <PuzDropdownContainer />
     </AppContainer>
   );
 }
