@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 const PuzzleContainer = styled.div`
@@ -38,85 +38,125 @@ const CharInput = styled.input`
 `;
 
 const CharContainer = styled.div`
-  display: inline-block;
+  display: flex;            // Changed from inline-flex to flex
+  flex-direction: column;   // Stack children vertically
+  align-items: center;      // Center-align the children horizontally
   text-align: center;
-  margin-right: 5px; // Add space between character groups
+  margin-right: 5px;        // Maintain right margin for spacing
 `;
 
-
 const EncryptedChar = styled.div`
-  color: #f39c12; // A distinct color for encrypted characters
+  color: #f39c12;
+`;
+
+const CharGroup = styled.div`
+  display: inline-flex;
+  flex-wrap: nowrap;
+`;
+
+const PuzzleBody = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  line-height: normal;
 `;
 
 function encryptCharacter(char) {
   const shift = 3;
   if (char.match(/[a-z]/i)) {
-    // Get the character code of the letter, and shift it
     let code = char.charCodeAt(0);
     if ((code >= 65) && (code <= 90)) {
-      return String.fromCharCode(((code - 65 + shift) % 26) + 65); // Uppercase letters
+      return String.fromCharCode(((code - 65 + shift) % 26) + 65);
     } else if ((code >= 97) && (code <= 122)) {
-      return String.fromCharCode(((code - 97 + shift) % 26) + 97); // Lowercase letters
+      return String.fromCharCode(((code - 97 + shift) % 26) + 97);
     }
   }
-  return char; // Return the original character if it's not a letter
+  return char;
 }
 
 function DisplayPuzzle({ puz }) {
   const inputRefs = useRef([]);
+  const [encryptedChars, setEncryptedChars] = useState([]);
 
-  const renderCharOrInput = (char, index) => {
-    if (char === ' ') {
-      return <span key={index}>&nbsp;&nbsp;&nbsp;&nbsp;</span>;
+  useEffect(() => {
+    if (puz && puz.body) {
+      setEncryptedChars(puz.body.split('').map(char => encryptCharacter(char.toUpperCase())));
     }
-    if (/[^a-zA-Z0-9]/.test(char)) {
-      return <span key={index}>{char}{char === '.' ? <br /> : null}</span>;
-    }
-    const thisInputIndex = inputRefs.current.length;
-    inputRefs.current.push(null); // Push new ref placeholder
-    return (
-      <CharContainer key={index}>
-      <CharInput
-        key={index}
-        type="text"
-        maxLength="1"
-        onChange={handleInputChange(thisInputIndex)}
-        onKeyDown={handleKeyDown(thisInputIndex)}
-        ref={el => inputRefs.current[thisInputIndex] = el}
-      />
-      <EncryptedChar>{encryptCharacter(char)}</EncryptedChar>
-      </CharContainer>
-    );
-  };
+  }, [puz?.body]);
 
   const handleInputChange = index => event => {
-    if (event.target.value.length === 1) {
-      const nextIndex = (index + 1) % inputRefs.current.length;
-      inputRefs.current[nextIndex] && inputRefs.current[nextIndex].focus();
-      if (inputRefs.current[nextIndex].value.length > 0) {
-        inputRefs.current[nextIndex].select();
-      }
-    }
-    
-  };
+    const newValue = event.target.value.toUpperCase();
+    const encryptedCharOfCurrent = encryptedChars[index];
 
-  const handleKeyDown = index => event => {
-    if (event.target.value.length === 0) {
-      if (event.key === 'Backspace') {
-        const prevIndex = (index - 1) % inputRefs.current.length;
-        inputRefs.current[prevIndex] && inputRefs.current[prevIndex].focus();
-        if (inputRefs.current[prevIndex].value.length > 0) {
-          inputRefs.current[prevIndex].select();
+    encryptedChars.forEach((encChar, idx) => {
+      if (encChar === encryptedCharOfCurrent && newValue.length <= 1) {
+        if (inputRefs.current[idx]) {
+          inputRefs.current[idx].value = newValue;
         }
       }
+    });
+
+    const nextIndex = (index + 1) % inputRefs.current.length;
+    inputRefs.current[nextIndex]?.focus();
+    if (inputRefs.current[nextIndex]?.value.length > 0) {
+      inputRefs.current[nextIndex].select();
     }
-  }
+  };
+
+  const handleKeyDown = (index, event) => {
+    if (event.target.value.length === 0 && event.key === 'Backspace') {
+      const prevIndex = (index - 1 + inputRefs.current.length) % inputRefs.current.length;
+      inputRefs.current[prevIndex]?.focus();
+      if (inputRefs.current[prevIndex]?.value.length > 0) {
+        inputRefs.current[prevIndex].select();
+      }
+    }
+  };
+
+  const renderCharOrInput = (char, index) => {
+    if (/[^a-zA-Z0-9]/.test(char)) { // Check if the character is NOT alphanumeric
+      return <span key={index}>{char}</span>; // Display punctuation normally
+    } else {
+      return ( // For alphanumeric characters, render input box and encrypted character below
+        <CharContainer key={index}>
+          <CharInput
+            type="text"
+            maxLength="1"
+            onChange={handleInputChange(index)}
+            onKeyDown={(event) => handleKeyDown(index, event)}
+            ref={el => inputRefs.current[index] = el}
+          />
+          <EncryptedChar>{encryptedChars[index]}</EncryptedChar>
+        </CharContainer>
+      );
+    }
+  };
 
   const renderPuzzleBody = () => {
     if (!puz || !puz.body) {
       return <p>No puzzle data available.</p>;
     }
-    return puz.body.split('').map(renderCharOrInput);
+    
+    let groups = [];
+    let currentGroup = [];
+
+    puz.body.split('').forEach((char, index) => {
+      if (char !== ' ') {
+        currentGroup.push(renderCharOrInput(char, index));
+      } else {
+        if (currentGroup.length) {
+          groups.push(<CharGroup key={`group-${groups.length}`}>{currentGroup}</CharGroup>);
+          currentGroup = [];
+        }
+        groups.push(<span key={`space-${index}`}>&nbsp;&nbsp;&nbsp;&nbsp;</span>);
+      }
+    });
+
+    if (currentGroup.length) {
+      groups.push(<CharGroup key={`group-${groups.length}`}>{currentGroup}</CharGroup>);
+    }
+
+    return <PuzzleBody>{groups}</PuzzleBody>;
   };
 
   return (
@@ -128,7 +168,7 @@ function DisplayPuzzle({ puz }) {
           <PuzzleDetail><strong>Body:</strong> {renderPuzzleBody()}</PuzzleDetail>
         </>
       ) : (
-        <p>Puzzle data is not available or is still loading.</p>
+        <PuzzleDetail>Puzzle data is not available or is still loading.</PuzzleDetail>
       )}
     </PuzzleContainer>
   );
