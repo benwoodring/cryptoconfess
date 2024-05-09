@@ -23,11 +23,13 @@ a:hover {
 }
 
 body {
-  max-width: 33.33%;
-  align-items: center;
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  display: flex;               /* Establishes a flex container */
+  justify-content: center;     /* Centers content horizontally */
+  align-items: center;         /* Centers content vertically */
+  min-height: 100vh;           /* Full viewport height */
+  margin: 0 auto;              /* Removes default margin and adds automatic horizontal margin */
+  min-width: 320px;            /* Ensures a minimum width for the content */
+  max-width: 50%;
 }
 
 h1 {
@@ -64,5 +66,8 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+  &::selection {
+    background: transparent; // Keep text selection invisible
   }
 }
